@@ -79,4 +79,41 @@ impl DataLoader<BostonRecord> for BostonRecord {
     }
 }
 
+pub trait FieldAccessor<T> {
+    fn get_field(&self, field: &str) -> Option<T>;
+}
+
+impl FieldAccessor<f64> for BostonRecord {
+    fn get_field(&self, field: &str) -> Option<f64> {
+        let field_value = match field {
+            "crim" => self.crim,
+            "zn" => self.zn,
+            "indus" => self.indus,
+            "chas" => self.chas,
+            "nox" => self.nox,
+            "rm" => self.rm,
+            "age" => self.age,
+            "dis" => self.dis,
+            "rad" => self.rad,
+            "tax" => self.tax,
+            "ptratio" => self.ptratio,
+            "b" => self.b,
+            "lstat" => self.lstat,
+            "medv" => self.medv,
+            _ => return None
+        };
+        Some(field_value)
+    }
+}
+
+
+impl FieldAccessor<Vec<f64>> for Vec<BostonRecord> {
+    fn get_field(&self, field: &str) -> Option<Vec<f64>> {
+        Some(self.iter()
+            .filter_map(|r| r.get_field(field))
+            .collect::<Vec<f64>>())
+                
+    }
+}
+
 
