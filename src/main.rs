@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
 pub mod data_utils;
-use data_utils::{BostonRecord, DataLoader, FieldAccessor};
+use data_utils::{BostonRecord, DataLoader, DatasetUtils, FieldAccessor};
 
 pub mod error;
 use error::Result;
+use rusty_machine::{learning::logistic_reg::LogisticRegressor, linalg::{Matrix, Vector}, prelude::SupModel};
 
 fn main() -> Result<()>{
     let mut p:PathBuf = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR")
@@ -30,6 +31,38 @@ fn main() -> Result<()>{
         None => return Err("Failed to get nitric oxide concentration".into())
     };
 
+    let indus = match data.get_field("indus") {
+        Some(v) => v,
+        None => return Err("Failed to get prportion of non-retail business".into())
+    };
+
+    let predictors = Matrix::new(
+        data.len(),
+        4,
+        zn.into_iter()
+            .zip(dis)
+            .zip(nox)
+            .zip(indus)
+            .flat_map(|(((a,b),c),d) | vec![a,b,c,d])
+            .collect::<Vec<f64>>()
+    );
+
+    let target = data.dich("crim", None)
+        .expect("Failed to create target vector")
+        .iter()
+        .map(|v| *v as f64)
+        .collect::<Vec<f64>>();
     
+    let t = Vector::new(target);
+
+    let mut logit_model = LogisticRegressor::default();
+    logit_model.train(&predictors, &t)?;
+
+    let coef = logit_model.parameters().unwrap()
+        .iter()
+        .map(|v| v.exp())
+        .collect::<Vec<f64>>();
+
+    println!("Coef: {:?}", coef);
     Ok(())
 }
