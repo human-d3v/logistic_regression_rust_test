@@ -148,7 +148,8 @@ impl DatasetUtils<f64> for Vec<BostonRecord> {
 
         let m = match median {
             Some(v) => v,
-            None => return Err("Failed to retrieve median".into())
+            None => &self.median(field)
+                .expect("Failed to build median for dichotomous variable")
         };
 
         Ok(values.iter()
