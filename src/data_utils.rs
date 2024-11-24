@@ -116,4 +116,44 @@ impl FieldAccessor<Vec<f64>> for Vec<BostonRecord> {
     }
 }
 
+pub trait DatasetUtils<T> {
+    fn median(&self, field: &str) -> Result<T>;
+    fn dich(&self, field: &str, median: Option<&T>) -> Result<Vec<u8>>;
+}
 
+impl DatasetUtils<f64> for Vec<BostonRecord> {
+    fn median(&self, field: &str) -> Result<f64> {
+        let mut sorted = match self.get_field(field) {
+            Some(v) => v,
+            None => return Err("Unable to filter vector for field".into())
+        };
+
+        sorted.sort_by(|a,b| a.total_cmp(b));
+        let mid = sorted.len() / 2;
+
+        if mid % 2 == 0 {
+            Ok((sorted[mid-1] + sorted[mid]) / 2.0)   
+        } else {
+            Ok(sorted[mid])
+        }
+
+    }
+
+    fn dich(&self, field: &str, median: Option<&f64>) -> Result<Vec<u8>> {
+        // create a vec of u8 that represent a dichotomous variable
+        let values = match self.get_field(field) {
+            Some(v) => v,
+            None => return Err("Failed to retrieve vector for dichotomous variable".into())
+        };
+
+        let m = match median {
+            Some(v) => v,
+            None => return Err("Failed to retrieve median".into())
+        };
+
+        Ok(values.iter()
+            .map(|n| if n > m {1} else {0})
+            .collect::<Vec<u8>>())
+    }
+
+}
