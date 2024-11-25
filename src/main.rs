@@ -58,11 +58,12 @@ fn main() -> Result<()>{
     let mut logit_model = LogisticRegressor::default();
     logit_model.train(&predictors, &t)?;
 
-    let coef = logit_model.parameters().unwrap()
-        .iter()
-        .map(|v| v.exp())
-        .collect::<Vec<f64>>();
+    let coef = match logit_model.parameters() {
+        Some(v) => v.into_iter().map(|x| x.exp()).collect::<Vec<f64>>(),
+        None => return Err("Failed to fetch model coefficients".into()) 
+    };
 
-    println!("Coef: {:?}", coef);
+    println!("Exponentiated Coefs: {:?}", coef);
     Ok(())
+
 }
